@@ -1,0 +1,5 @@
+.vercel
+# Ignore Vercel configuration files
+.vercel
+.env
+node_modules/
