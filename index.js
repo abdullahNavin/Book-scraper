@@ -17,6 +17,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/scrape", async (req, res) => {
+  console.log('Received scrape request:', req.body);
   const { bookName } = req.body;
   if (!bookName) return res.status(400).json({ error: "Book name is required" });
 
