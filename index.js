@@ -47,6 +47,8 @@ app.post("/scrape", async (req, res) => {
     bookInfo.affiliateLink = affiliateURL;
 
     // ✅ Use axios instead of fetch
+    console.log("Affiliate Token being used:", AFFILIATE_TOKEN?.substring(0,30) + "...");
+
     try {
       const resShort = await axios.post(
         AFFILIATE_API_URL,
