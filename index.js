@@ -26,7 +26,13 @@ app.post("/scrape", async (req, res) => {
     console.log('console in try block');
     const searchUrl = `https://www.rokomari.com/search?term=${encodeURIComponent(bookName)}&search_type=ALL`;
     const { data: html } = await axios.get(searchUrl, {
-      headers: { "User-Agent": "Mozilla/5.0" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.rokomari.com/",
+        "Connection": "keep-alive",
+      },
       timeout: 15000,
     });
 
@@ -52,7 +58,7 @@ app.post("/scrape", async (req, res) => {
     bookInfo.affiliateLink = affiliateURL;
 
     // ✅ Use axios instead of fetch
-    console.log("Affiliate Token being used:", AFFILIATE_TOKEN?.substring(0,30) + "...");
+    console.log("Affiliate Token being used:", AFFILIATE_TOKEN?.substring(0, 30) + "...");
 
     try {
       const resShort = await axios.post(
