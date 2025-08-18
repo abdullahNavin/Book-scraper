@@ -15,28 +15,33 @@ const AFFILIATE_PARAMS = "affId=44ARrOo1928OIAR&affs=30062&cma=604800";
 app.get("/", (req, res) => {
   res.send("🚀 Cheerio + Axios scraper running on Render!");
 });
-console.log(process.env.ROKOMARI_TOKEN);
 
 app.post("/scrape", async (req, res) => {
-  console.log('Received scrape request:', req.body);
+  console.log("Received scrape request:", req.body);
   const { bookName } = req.body;
   if (!bookName) return res.status(400).json({ error: "Book name is required" });
 
   try {
-    console.log('console in try block');
-    const searchUrl = `https://www.rokomari.com/search?term=${encodeURIComponent(bookName)}&search_type=ALL`;
-    const { data: html } = await axios.get(searchUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.rokomari.com/",
-        "Connection": "keep-alive",
+    console.log("console in try block");
+
+    const searchUrl = `https://www.rokomari.com/search?term=${encodeURIComponent(
+      bookName
+    )}&search_type=ALL`;
+
+    // ✅ Proxy (ScraperAPI or ZenRows)
+    const PROXY_API_KEY = process.env.SCRAPER_API_KEY;
+    const { data: html } = await axios.get("http://api.scraperapi.com", {
+      params: {
+        api_key: PROXY_API_KEY,
+        url: searchUrl,
+        device_type: "desktop",   // ✅ mimic a desktop browser
+        country_code: "bd",       // ✅ get Bangladesh localized version
       },
-      timeout: 15000,
+      timeout: 20000,
     });
 
-    console.log('HTML fetched successfully');
+
+    console.log("HTML fetched successfully");
 
     const $ = cheerio.load(html);
     const wrapper = $(".book-list-wrapper").first();
@@ -47,24 +52,48 @@ app.post("/scrape", async (req, res) => {
 
     const linkElement = wrapper.find("a").first();
     const bookInfo = {
-      bookTitle: wrapper.find(".book-title").first().text().trim() || null,
-      author: wrapper.find(".book-author").first().text().trim() || null,
-      originalPrice: wrapper.find(".original-price").first().text().replace("TK.", "").trim() || null,
-      currentPrice: wrapper.find(".book-price").first().text().replace("TK.", "").trim() || null,
-      link: linkElement.length ? `https://www.rokomari.com${linkElement.attr("href")}` : null,
+      bookTitle:
+        wrapper.find(".book-title").first().text().trim() || null,
+      author:
+        wrapper.find(".book-author").first().text().trim() || null,
+      originalPrice:
+        wrapper
+          .find(".original-price")
+          .first()
+          .text()
+          .replace("TK.", "")
+          .trim() || null,
+      currentPrice:
+        wrapper
+          .find(".book-price")
+          .first()
+          .text()
+          .replace("TK.", "")
+          .trim() || null,
+      link: linkElement.length
+        ? `https://www.rokomari.com${linkElement.attr("href")}`
+        : null,
     };
 
     const affiliateURL = `${bookInfo.link}?${AFFILIATE_PARAMS}`;
     bookInfo.affiliateLink = affiliateURL;
 
-    // ✅ Use axios instead of fetch
-    console.log("Affiliate Token being used:", AFFILIATE_TOKEN?.substring(0, 30) + "...");
+    // ✅ Generate short link via Affiliate API
+    console.log(
+      "Affiliate Token being used:",
+      AFFILIATE_TOKEN?.substring(0, 30) + "..."
+    );
 
     try {
       const resShort = await axios.post(
         AFFILIATE_API_URL,
         { originalURL: affiliateURL, isCustom: true },
-        { headers: { Authorization: AFFILIATE_TOKEN, "Content-Type": "application/json" } }
+        {
+          headers: {
+            Authorization: AFFILIATE_TOKEN,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       bookInfo.affiliateShortLink = resShort.data?.result?.shortLinkId
@@ -78,9 +107,12 @@ app.post("/scrape", async (req, res) => {
     res.json(bookInfo);
   } catch (err) {
     console.error("Scrape error:", err.message);
-    res.status(500).json({ error: err.message });
+    res
+      .status(500)
+      .json({ error: "Scraping failed", details: err.message });
   }
 });
+
 
 
 const PORT = process.env.PORT || 3000;
