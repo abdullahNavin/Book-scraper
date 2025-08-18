@@ -15,6 +15,7 @@ const AFFILIATE_PARAMS = "affId=44ARrOo1928OIAR&affs=30062&cma=604800";
 app.get("/", (req, res) => {
   res.send("🚀 Cheerio + Axios scraper running on Render!");
 });
+console.log(process.env.ROKOMARI_TOKEN);
 
 app.post("/scrape", async (req, res) => {
   console.log('Received scrape request:', req.body);
@@ -22,11 +23,14 @@ app.post("/scrape", async (req, res) => {
   if (!bookName) return res.status(400).json({ error: "Book name is required" });
 
   try {
+    console.log('console in try block');
     const searchUrl = `https://www.rokomari.com/search?term=${encodeURIComponent(bookName)}&search_type=ALL`;
     const { data: html } = await axios.get(searchUrl, {
       headers: { "User-Agent": "Mozilla/5.0" },
       timeout: 15000,
     });
+
+    console.log('HTML fetched successfully');
 
     const $ = cheerio.load(html);
     const wrapper = $(".book-list-wrapper").first();
